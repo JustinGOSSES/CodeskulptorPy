@@ -1,0 +1,284 @@
+"""
+Clone of 2048 game.
+"""
+
+import poc_2048_gui
+
+# Directions, DO NOT MODIFY
+UP = 1
+DOWN = 2
+LEFT = 3
+RIGHT = 4
+
+# Offsets for computing tile indices in each direction.
+# DO NOT MODIFY this dictionary.
+OFFSETS = {UP: (1, 0),
+           DOWN: (-1, 0),
+           LEFT: (0, 1),
+           RIGHT: (0, -1)}
+
+import random
+    #imports random module for use in new tile values of 2 or 4 below
+
+#import user40_E5NETAuCCD_3 as test_suite_import_whole
+    #imports tester module ran at bottom
+
+GRID_HEIGHT = 6
+GRID_WIDTH = 4    
+    
+    
+def merge(line):
+    """
+    Helper function that merges a single row or column in 2048
+    """
+    # replace with your code from the previous mini-project
+    zline=list(line)
+    zero_lst=[]
+    for kaa in range(0,len(zline)):
+        iaa=zline[kaa]
+        if iaa==0:
+            zero_lst.append(kaa)
+            zline.append(0)
+    for jaa in sorted(zero_lst,reverse=True):
+        del zline[jaa]
+    #print zline, "zline after zeros taken out and moved to end"
+    
+    mlist = list(zline)
+    for laa in range(0,(len(zline)-1)):  # took out a -1 after len(zline)-1
+        if mlist[laa]==mlist[laa+1]:
+            mlist[laa]=2*mlist[laa]
+            mlist[laa+1]=0
+    #print mlist, "mlist after merge but before zeroed again"
+    final_list=list(mlist)
+    zero_lst2=[]
+    for maa in range(0,len(final_list)):
+        caa=mlist[maa]
+        if caa==0:
+            zero_lst2.append(maa)
+            final_list.append(0)
+    for naa in sorted(zero_lst2,reverse=True):
+        del final_list[naa]
+    #print final_list,"final list after all"       
+    return final_list     
+
+class TwentyFortyEight:
+    """
+    Class to run the game logic.
+    """
+
+    def __init__(self, grid_height, grid_width):
+        """
+        establishes class initial attributes: height, width, 
+        makes initial blank grid, and runs self.reset
+        """
+        self._height = grid_height
+        self._width = grid_width
+        self._blank_grid = [[0 for dummy_col in range(self._width)]
+                           for dummy_row in range(self._height)]
+        self._grid = self.reset()
+        
+        self._upp = []
+        for dummy_col in range((self._width)):
+            self._upp.append((0,dummy_col))
+        #print self.up, "up list"
+        self._down = []
+        for dummy_col in range((self._width)):
+            self._down.append(((self._height-1),dummy_col))
+        #print self.down, "down list"
+        self._left = []
+        for dummy_row in range((self._height)):
+            self._left.append(((dummy_row),0))
+        #print self.left, "left list"
+        self._right = []
+        for dummy_row in range(self._height):
+            #   replaced with below self.RIGHT.append(((GRID_HEIGHT-1),dummy_row))
+            self._right.append((((self._height-1)- dummy_row), (self._width-1)))      # changed again
+        #print self.right, "right list"                         
+    
+    def get_dir_list(self,direction):
+        """
+        helper function to get direction lists to func for move below
+        """
+        if direction == UP:
+            return self._upp
+        elif direction == DOWN:
+            return self._down
+        elif direction == LEFT:
+            return self._left
+        elif direction == RIGHT:
+            return self._right
+        else:
+            print "problem, direction is not valid"
+    
+    def reset(self):
+        """
+        Reset the game so the grid is empty except for two
+        initial tiles.
+        """
+        self._grid1 = [[0 for dummy_col in range(self._width)]
+                           for dummy_row in range(self._height)]
+        self.new_tile() 
+        self.new_tile()
+        return #self.GRID
+
+    def __str__(self):
+        """
+        Return a string representation of the grid for debugging.
+        """
+        #print "hello"
+        string = []
+        for dummy_row in range(self._height):
+            string.append(self._grid1[dummy_row])
+        return str(string) #, "type is", type(string)
+        
+        #for dummy_row in range(self._height):
+        #    print str(self.GRID[dummy_row])
+            
+       
+    def get_grid_height(self):
+        """
+        Get the height of the board.
+        """
+        return self._height
+
+    def get_grid_width(self):
+        """
+        Get the width of the board.
+        """
+        return self._width
+
+    def move(self, direction):
+        """
+        Move all tiles in the given direction and add
+        a new tile if any tiles moved.
+        """
+        counter = 0
+        #orient = OFFSETS[direction]
+        #initial_list = []
+        starter_dlist = self.get_dir_list(direction)
+        #print starter_dlist, "printed starter_dlist- based on direction"
+        if direction == DOWN or direction == UP:
+            max_length = self._height
+        elif direction == LEFT:
+            max_length = self._width
+        elif direction == RIGHT:
+            max_length = self._width    
+        else:
+            print "problem direction not valid or Grid or Height not valid, problem in move function"
+        #print max_length, "max length"
+        for step in range(len(starter_dlist)):  
+            practice = list()
+            for stepb in range(max_length):
+                rowb = starter_dlist[step][0] + stepb * OFFSETS[direction][0]
+                colb = starter_dlist[step][1] + stepb * OFFSETS[direction][1]    
+                practice.append((rowb,colb))
+            
+            #print practice, "practice list"
+            for_merge = []
+            for stepc in range(len(practice)):
+                tile = self.get_tile(practice[stepc][0],practice[stepc][1])
+                for_merge.append(tile)
+            
+            #print for_merge, "printed for_merge list of values"
+            #print for_merge, "for_merge after reverse if needed",direction
+            after_merge = merge(for_merge)
+            print after_merge, "printed after_merge"
+            for stepd in range(len(after_merge)):   
+                self.set_tile(practice[stepd][0],practice[stepd][1],after_merge[stepd])
+            if after_merge != for_merge:
+                counter = counter + 1
+        print counter, "counter value"
+        if counter > 0:
+            self.new_tile()
+        else: counter = 0   
+        #print self.__str__(), "printed grid in move function"
+
+    def new_tile(self):
+        """
+        Create a new tile in a randomly selected empty
+        square (if exists).  The tile should be 2 90% of the time and
+        4 10% of the time.
+        - creates a list of positions with values = 0 (if one exists)
+            - interates through list using for loop similar to print grid
+            - if = 0, append a blank zero list with that row and col
+        - randomly selects a position from that zero list
+        - randomly pick a number 1-10, if 1, then value =4 , if not=2
+        - set value at that position to be that value
+        """
+        zero_list = []
+        #print zero_list, "printed zero list initial"
+        #print " "
+        
+        for col in range(self._width):
+            for row in range(self._height):
+                if self._grid1[row][col]==0:
+                    zero_list.append([row,col])
+                else:
+                    print "hit a non zero"
+        if zero_list == []:
+            return "end game"
+        else:
+            rand_zero = random.choice(zero_list)
+            pick_10 = random.randint(1, 11)
+            if pick_10 == 1:
+                new_value = 4
+            else: 
+                new_value = 2
+            self.set_tile(rand_zero[0], rand_zero[1], new_value)
+
+    def set_tile(self, row, col, value):
+        """
+        Set the tile at position row, col to have the given value.
+        """
+        self._grid1[row][col]= value
+
+    def get_tile(self, row, col):
+        """
+        Return the value of the tile at position row, col.
+        """
+        return self._grid1[row][col]  
+    
+#test_suite_import_whole.test1.report_results()    
+###### runs a test from tester module imported above.
+
+### code below tests width and height calls to make sure they work
+#FirstGame = TwentyFortyEight(3,4)
+
+#computed_height_test = first_game.get_grid_height()
+#computed_width_test = first_game.get_grid_width()
+
+#test_height_width = test_suite_import_whole.TestSuite()
+#test_height_width.run_test([computed_height_test,computed_width_test],[GRID_HEIGHT,GRID_WIDTH],"failure in height width test")
+#test_height_width.report_results() 
+
+###code below prints the grid as string
+#first_game.__str__()
+#print " " 
+###tests get_tile
+#def test_set_get_tile():
+#    """
+#    test that sets and gets a tile to make sure it is working
+#    """
+#    test_tile_value = 8
+#    test_row_p = 2
+#    test_col_p = 2
+#    test_get_tile_game = TwentyFortyEight(GRID_HEIGHT,GRID_WIDTH)
+#    test_get_tile_game.set_tile(test_row_p,test_col_p,test_tile_value)
+#    test_get_set = test_suite_import_whole.TestSuite()
+#    test_get_set.run_test(test_get_tile_game.get_tile(test_row_p,test_col_p),test_tile_value,"failure in set get test")
+#    test_get_set.report_results() 
+#    #print test_get_tile_game.get_tile(test_row_p,test_col_p), "get tile value", test_row_p,test_col_p
+#test_set_get_tile()
+#
+#print " " 
+#first_game.new_tile()
+#first_game.new_tile()
+#first_game.new_tile()
+#first_game.__str__()
+#first_game.new_tile()
+#first_game.__str__()
+
+#FirstGame.move(LEFT)
+#print FirstGame.__str__(), "printed grid at base function"
+
+poc_2048_gui.run_gui(TwentyFortyEight(GRID_HEIGHT, GRID_WIDTH))
