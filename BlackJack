@@ -1,0 +1,275 @@
+# Mini-project #6 - Blackjack for Coursera & Rice Intro Progr. Python Class
+# MADE BY : JCG 2015-04-11
+# Version 20
+
+import simplegui
+import random
+
+# load card sprite - 936x384 - source: jfitz.com
+CARD_SIZE = (72, 96)
+CARD_CENTER = [36, 48]
+card_images = simplegui.load_image("http://storage.googleapis.com/codeskulptor-assets/cards_jfitz.png")
+
+CARD_BACK_SIZE = (72, 96)
+CARD_BACK_CENTER = (36, 48)
+card_back = simplegui.load_image("http://storage.googleapis.com/codeskulptor-assets/card_jfitz_back.png")    
+
+# initialize some useful global variables
+in_play = False
+score = 0
+original_deck = []
+original_deck2 = []
+dealer_hand = []
+player_hand = []
+message = "hit or stay?"
+message_winlose = " "
+message_winlose2 = " "
+
+# define globals for cards
+SUITS = ('C', 'S', 'H', 'D')
+RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K')
+VALUES = {'A':1, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':10, 'Q':10, 'K':10}
+
+# define card class
+class Card:
+    def __init__(self, suit, rank):
+        if (suit in SUITS) and (rank in RANKS):
+            self.suit = suit
+            self.rank = rank
+        else:
+            self.suit = None
+            self.rank = None
+            print "Invalid card: ", suit, rank
+            
+    def __str__(self):
+        return self.suit + self.rank
+
+    def get_suit(self):
+        return self.suit
+
+    def get_rank(self):
+        return self.rank
+
+    def draw(self, canvas, pos):
+        card_loc = (CARD_CENTER[0] + CARD_SIZE[0] * RANKS.index(self.rank), 
+                    CARD_CENTER[1] + CARD_SIZE[1] * SUITS.index(self.suit))
+        canvas.draw_image(card_images, card_loc, CARD_SIZE, [pos[0] + CARD_CENTER[0], pos[1] + CARD_CENTER[1]], CARD_SIZE)
+     
+    def draw_cover(self, canvas, pos):
+        card_loc = (CARD_CENTER[0] + CARD_SIZE[0] * 1, 
+                    CARD_CENTER[1] + CARD_SIZE[1] * 0)
+        canvas.draw_image(card_back, card_loc, CARD_SIZE, [pos[0] + CARD_CENTER[0], pos[1] + CARD_CENTER[1]], CARD_SIZE)    
+    
+# define hand class
+class Hand:
+    def __init__(self):
+        self.hand = []
+        #print self.hand
+        
+    def add_card(self, card):
+        # add a card object to a hand
+        self.hand.append(card)
+           
+    def __str__(self):
+        result = "Hand contains "
+        for i in self.hand:
+            result += str(i) + " "
+        return result
+    
+    def get_value(self):
+        # count aces as 1, if the hand has an ace, then add 10 to hand value if it doesn't bust
+        # compute the value of the hand, see Blackjack video
+        global VALUES
+        hand_value = 0
+        ace_count = 0
+        for i in self.hand:
+            hand_value += VALUES.get(i.get_rank())
+            if i.get_rank() == "A": #ace counter, see below
+                ace_count += 1
+        if (ace_count < 1): # ace counter to used to decide 1 or 11
+            return hand_value
+        else:
+            if hand_value + 10 <= 21:
+                return hand_value + 10
+            else:
+                return hand_value   
+        print "hand value is", hand_value
+   
+    def draw(self, canvas, pos): ####### I took out pos from inputs
+        # draw a hand on the canvas, use the draw method for cards         
+        for card in self.hand:
+            hand_pos = self.hand.index(card)
+            x_pos = (50+(hand_pos*80))
+            pos[0] = x_pos
+            card.draw(canvas, pos)
+    
+# defined Deck Class       
+class Deck:
+    global original_deck2, original_deck
+    def __init__(self):    # create a Deck object
+        self.deck = []
+        for i in SUITS:
+            for j in RANKS:
+                test = Card(i,j)
+                #print test
+                self.deck.append(test)
+                original_deck2.append(test)
+        #print self.deck
+    def shuffle(self):
+        random.shuffle(self.deck)    # shuffle the deck
+    global original_deck
+    def deal_card(self, pos):
+        # deal a card object from the deck
+        #print len(self.deck), "first len(self.deck)"
+        if len(self.deck) > 0: # takes a card out to be dealt if remainder >0
+            return self.deck.pop(pos)
+            #print len(self.deck), "second len(self.deck)"
+        else:
+            self.deck = []
+            for i in SUITS:
+                for j in RANKS:
+                    test = Card(i,j)
+                    #print test
+                    self.deck.append(test)     
+            return self.deck.pop(pos)
+    
+    def __str__(self):
+        # return a string representing the deck
+        result = "Deck contains "
+        for i in self.deck:
+            result += str(i) + " "
+        return result
+
+#define event handlers for buttons (deal, hit, stand)
+def deal():
+    global outcome, message_winlose2, in_play, score, original_deck, dealer_hand, player_hand, message, message_winlose
+    #create & shuffle deck & create new deck if deck is []
+    if in_play == True:
+        message_winlose = "you hit deal before game end"
+        message_winlose2 = "-1 and hit deal to start over"
+        score -= 1
+        in_play = False
+    else:
+        if original_deck == []:
+            original_deck = Deck()
+            print original_deck
+            original_deck.shuffle()
+    ##print original_deck
+    ##print type(original_deck)
+    #creat hands for player and dealer
+        player_hand = Hand()
+        dealer_hand = Hand()
+    # deal card position 1 and 3 to player and 2 and 4 to dealer hands
+    # do this using the deal method of the deck of deck, and provide positions!
+        player_hand.add_card(original_deck.deal_card(0))
+        dealer_hand.add_card(original_deck.deal_card(0))
+        player_hand.add_card(original_deck.deal_card(0))
+        dealer_hand.add_card(original_deck.deal_card(0))
+        print "player -", player_hand.__str__()
+        print "dealer -", dealer_hand.__str__()
+        in_play = True # says we are now in play and first cards have been dealt
+        message = "hit or stay"
+        message_winlose = " "
+        message_winlose2 = " "
+        
+def hit():
+    global in_play, score, message, message_winlose
+    # if the hand is in play, hit the player
+    if in_play == True:
+        print "in play and you hit the 'hit' button"
+        message = "hit or stand"
+        if player_hand.get_value() <= 21:
+            player_hand.add_card(original_deck.deal_card(0))
+            print "player hand value is", player_hand.get_value(), "dealer has",dealer_hand.get_value()
+            if player_hand.get_value() > 21:
+                print "You have BUSTED!", "with score of",player_hand.get_value(),"vs. ",dealer_hand.get_value()
+                message_winlose = "Player busted!"
+                score -= 1
+                in_play = False
+                print "score is ", score
+            elif player_hand.get_value() == 21:
+                print "You Got 21, What did dealer get?"
+        elif player_hand.get_value() > 21:
+            print "You have BUSTED!"
+            message_winlose = "Dealer wins" # with score of , str(player_hand.get_value()),"vs. ",str(dealer_hand.get_value())
+            score -= 1
+            in_play = False 
+            print "score is ", score
+    else:
+        print "stop hitting the hit button, the game is not in play"
+    # if busted, assign a message to outcome, update in_play and score
+       
+def stand():
+    global in_play, dealer_hand, player_hand, score, message, message_winlose
+    # if hand is in play, repeatedly hit dealer until his hand has value 17 or more
+    if in_play == False:
+        print "not in play"
+    elif in_play == True:
+        message = "hit or stand"
+    if player_hand.get_value() > 21:
+        print "remember? you have busted, sad face..."
+    elif dealer_hand.get_value() <= 17:
+        while dealer_hand.get_value() <= 17:
+            dealer_hand.add_card(original_deck.deal_card(0))
+            if dealer_hand.get_value() > 21:
+                print "Dealer has BUSTED!", "you win with score", player_hand.get_value(), "vs.", dealer_hand.get_value()
+                message_winlose = "Dealer has busted, you win!"
+                score += 1
+                in_play = False
+            elif dealer_hand.get_value() >= player_hand.get_value():
+                print "Dealer Wins", "with score of ",dealer_hand.get_value(), "vs.", player_hand.get_value()
+                message_winlose = "Dealer wins" #with score of , str(dealer_hand.get_value()),"vs. your", str(player_hand.get_value())
+                score -= 1
+                in_play = False
+            elif dealer_hand.get_value() < player_hand.get_value():
+                print "Player Wins!", "with score of ", player_hand.get_value(), "vs.", dealer_hand.get_value()
+                message_winlose = "Player wins!" # with score of", str(player_hand.get_value()),"vs. ",str(dealer_hand.get_value())
+                score += 1
+                in_play = False
+    elif dealer_hand.get_value() >= player_hand.get_value():
+        print "Dealer Wins", "with score of ",dealer_hand.get_value(),"vs.",player_hand.get_value()
+        message_winlose = "Dealer wins" # with score of , str(dealer_hand.get_value()),"vs. your", str(player_hand.get_value())       
+        score -= 1
+        in_play = False
+    elif dealer_hand.get_value() < player_hand.get_value():
+        print "Player Wins!", "with score of ", player_hand.get_value(), "vs.", dealer_hand.get_value()
+        message_winlose = "Player wins!" #with score of , str(player_hand.get_value()),"vs. ",str(dealer_hand.get_value())
+        message = "new deal"
+        score += 1
+        in_play = False
+    print score
+    # assign a message to outcome, update in_play and score
+
+# draw handler    
+def draw(canvas):
+    global player_hand, dealer_hand, in_play, message
+    # draw cards in hands, messages, score, and game title
+    player_hand.draw(canvas, [300,400])
+    dealer_hand.draw(canvas, [300,150])
+    if in_play == True:
+        card = Card("S", "A")
+        card.draw_cover(canvas,[50,150])
+    else:
+        card =Card("S","A")
+        message = "new deal?"
+    canvas.draw_text(("score is " + str(score)), (490,50), 25, "White")
+    canvas.draw_text("Blackjack", (200,50), 50, "White")
+    canvas.draw_text("Dealers Hand", (50,135), 30, "White")
+    canvas.draw_text("Players Hand", (50,390), 30, "White")
+    canvas.draw_text(("select button : " +message), (250,300), 30, "White")
+    canvas.draw_text(message_winlose, (250,330), 20, "White")
+    canvas.draw_text(message_winlose2, (250,360), 20, "White")
+
+# initialization frame
+frame = simplegui.create_frame("Blackjack", 600, 600)
+frame.set_canvas_background("Green")
+
+#create buttons and canvas callback
+frame.add_button("Deal", deal, 200)
+frame.add_button("Hit",  hit, 200)
+frame.add_button("Stand", stand, 200)
+frame.set_draw_handler(draw)
+
+# get things rolling
+deal()
+frame.start()
