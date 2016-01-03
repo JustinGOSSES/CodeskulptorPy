@@ -1,0 +1,156 @@
+"""
+Monte Carlo Tic-Tac-Toe Player
+by Justin Gosses September, 2015
+made as part of Python Class run by Rice University and Coursera
+"""
+
+import random
+import poc_ttt_gui
+import poc_ttt_provided as provided
+
+# Constants for Monte Carlo simulator
+# You may change the values of these constants as desired, but
+#  do not change their names.
+NTRIALS = 30         # Number of trials to run, 1
+SCORE_CURRENT = 1.0 # Score for squares played by the current player, 1
+SCORE_OTHER = 1.0   # Score for squares played by the other player, 1
+
+###when using check_win() function from provided,
+#  2=playerX, 3=PlayerO, none= not done, no win=4
+# or from print constant: 1 empty constant, 2 PLAYERX, 3 PLAYERO, 4 DRAW
+
+
+def mc_trial(board, player):
+    """
+    mc_trial(board, player): This function takes a current board and the next player to
+    move. The function should play a game starting with the given player by making 
+    random moves, alternating between players. The function should return when the 
+    game is over. The modified board will contain the state of the game, so the 
+    function does not return anything. In other words, the function should modify
+    the board input.
+    """
+    start_len = len(board.get_empty_squares())
+    #print start_len, "start_len"
+    empty_list = list(board.get_empty_squares())
+    #print empty_list, "empty list"
+    for dummy in range(start_len):
+        r_square_place = random.randrange(0,len(empty_list))
+        #print r_square_place, "r_square_place"
+        r_square = empty_list[r_square_place]
+        #print r_square, "r_square"
+        board.move(r_square[0],r_square[1], player)
+        empty_list.pop(r_square_place)
+        #print player, "player"
+        player = provided.switch_player(player)
+        #print player, "player"
+        if board.check_win() != None:
+            print board.check_win(), "winner?"
+            return board
+    return board
+    
+    
+def mc_update_scores(scores, board, player):
+    """
+    This function takes a grid of scores (a list of lists) with the same dimensions
+    as the Tic-Tac-Toe board, a board from a completed game, and which player the
+    machine player is. The function should score the completed board and update 
+    the scores grid. As the function updates the scores grid directly, it does 
+    not return anything,
+    """
+    #current_player = player
+    #if current_player == provided.PLAYERX:
+    #    other_player = provided.PLAYERO
+    #else:
+    #    other_player = provided.PLAYERX
+    if board.check_win() == 4:
+        for dummy_col in range(0,(board.get_dim())):
+            for dummy_row in range(0,(board.get_dim())):
+                scores[dummy_row][dummy_col] +=0
+    else:
+        for dummy_col in range(0,(board.get_dim())):
+            for dummy_row in range(0,(board.get_dim())):
+                if board.square(dummy_row,dummy_col) == 1:
+                    scores[dummy_row][dummy_col]+= 0
+                elif board.square(dummy_row,dummy_col) ==  board.check_win():
+                    scores[dummy_row][dummy_col] += SCORE_CURRENT
+                elif board.square(dummy_row,dummy_col) !=  board.check_win():
+                    scores[dummy_row][dummy_col] -= SCORE_CURRENT
+    print scores, "scores at end of update_scores"       
+               
+    
+def get_best_move(board, scores):
+    """
+    This function takes a current board and a grid of scores. The function 
+    should find all of the empty squares with the maximum score and randomly
+    return one of them as a (row, column) tuple. It is an error to call this 
+    function with a board that has no empty squares (there is no possible next
+    move), so your function may do whatever it wants in that case. The case 
+    where the board is full will not be tested.
+    """
+    #- A. use function to find empty squares locations
+    #- B. make list of score values at those locations
+    #- C. find max value within that list
+    #- D. find all locations within scores with that value?, make into list
+    #- E. pick one locaton at random and return it.
+    ##print board, "print board used in get_best_move func"
+    ##print scores, "scores in get_best_move func"
+    if len(board.get_empty_squares()) == 0:
+        return "no spaces left to move, error in get_best_move function"
+    else: 
+        start_len_bm = len(board.get_empty_squares())
+    ##print start_len_bm, "print start_len_bm in best_move func"
+    empty_list_bm = list(board.get_empty_squares())
+    max_scores_position_list = []    
+    scores_values_list = []
+    for dummy in range(0,start_len_bm):
+        empty_loc = empty_list_bm[dummy]
+        scores_value = scores[empty_loc[0]][empty_loc[1]]
+        scores_values_list.append(scores_value)
+    ##print scores_values_list, "print scores_values_list"    
+    if board.check_win() == 0:
+        max_score = 0
+    else:
+        max_score = max(scores_values_list)
+    #print max_score, "max score"
+    for dummy in range(0,start_len_bm):
+        empty_loc = empty_list_bm[dummy]
+        scores_value = scores[empty_loc[0]][empty_loc[1]]
+        if scores_value == max_score:
+            max_scores_position_list.append(empty_loc)
+    #print max_scores_position_list, "print max_scores_position_list"
+    return random.choice(max_scores_position_list)
+
+def mc_move(board, player, trials):
+    """
+    This function takes a current board, which player the machine player 
+    is, and the number of trials to run. The function should use the Monte
+    Carlo simulation described above to return a move for the machine
+    player in the form of a (row, column) tuple. Be sure to use the other
+    functions you have written!
+    """
+    #A. Make a clone of board. Returns scores to [] using creates scores function I created. 
+    #B. for N trials: runs mc_trial and then update_scores functions.
+    #C. Uses get_best_move function and real board. Returns that move as tuple.
+    print board.__str__()
+    scores = create_scores(board)
+    for dummy in range(0,trials):
+        board_c = board.clone()
+        mc_trial(board_c, player)
+        mc_update_scores(scores, board_c, player)
+    #print get_best_move(board, scores), "RESULT of get_best_move"
+    print board.__str__()
+    return get_best_move(board, scores)
+    
+def create_scores(board):
+    """
+    This function creates a blank scores grid with same dimensions as current board.
+    """
+    scores = []
+    for dummy in range(0,board.get_dim()):
+        scores.append([0 for dummy in range(0,board.get_dim())])
+    return scores
+
+
+
+provided.play_game(mc_move, NTRIALS, False)        
+poc_ttt_gui.run_gui(3, provided.PLAYERX, mc_move, NTRIALS, False)
