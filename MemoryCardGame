@@ -1,0 +1,142 @@
+# implementation of card game - Memory
+
+import simplegui
+import random
+
+# globals
+card_list = [1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8]
+card_exposed = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+#print type(card_exposed)
+#print len(card_exposed)
+card_click = []
+state = 0
+turn = 0
+card_temp = [0, 0]
+card_temp_index = [40,30]
+clicked_on_old = "not yet"
+card_perm_expos = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+
+# helper function to initialize globals
+
+
+def card_list_gen():
+    global card_list
+    card_list = [1,2,3,4,5,6,7,8]
+    #print type(card_list)
+    #print card_list
+    card_list.extend([1,2,3,4,5,6,7,8])
+    #print card_list
+    random.shuffle(card_list)
+    #print card_list
+    #return card_list
+
+def new_game():
+    global card_click, state, turn, card_temp, card_temp_index, card_exposed, card_list_gen, card_list
+    global card_perm_expos
+    card_perm_expos = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+    card_click = []
+    state = 0
+    turn = 0
+    card_temp = [0, 0]
+    card_temp_index = [40,30]
+    card_exposed = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+    label.set_text(turn)
+    card_list_gen()
+
+print card_list[1]
+     
+# define event handlers
+def mouseclick(pos):
+    global card_exposed, state, turn, card_temp, card_temp_index, card_exposed_pos
+    global clicked_on_old   
+    print pos[0], "click pos"
+    if state == 0:
+        for card_index in range(len(card_list)):
+            card_pos = (50 * card_index)+25
+            if ((pos[0] <= (card_pos+25)) and (pos[0] >= card_pos-25)):
+                print card_pos, "card_pos"
+                card_exposed[card_index] = True
+                print card_index, "card index"
+                card_temp[0] =(card_list[card_index])
+                card_temp_index[0] = card_index
+                print card_temp[0]
+                print "card_temp [0]", card_temp [0]
+                state = 1
+    elif state == 1:
+        for card_index in range(len(card_list)):
+            card_pos = (50 * card_index)+25
+            if ((pos[0] <= (card_pos+25)) and (pos[0] >= card_pos-25)):
+                print card_pos, "card_pos"
+                if card_index == card_temp_index[0]:  # does nothing if already clicked
+                    clicked_on_old = "yes" 
+                elif not(card_index == card_temp_index[0]):      
+                    if card_perm_expos[card_index] == True:
+                         print "hit card already paired"
+                    else:
+                        card_exposed[card_index] = True
+                        print card_index, "card index"
+                        card_temp[1] =(card_list[card_index])
+                        card_temp_index[1] = card_index
+                        print "card_temp [1]", card_temp [1]      
+                        state = 2
+                        turn += 1
+                        label.set_text(turn)
+    else:
+#        if not (card_temp[0] == card_temp[1]): 
+#            card_exposed[card_temp_index[0]] = False
+#            card_exposed[card_temp_index[1]] = False
+        for card_index in range(len(card_list)):
+            card_pos = (50 * card_index)+25
+            if ((pos[0] <= (card_pos+25)) and (pos[0] >= card_pos-25)):
+                #print card_pos, "card_pos"
+                if (card_index == card_temp_index[0]) or (card_index == card_temp_index[1]):  # does nothing if already clicked
+                    clicked_on_old = "yes" 
+                elif not(card_index == card_temp_index[0]):
+                    if card_temp[0] == card_temp[1]:
+                        card_perm_expos[card_temp_index[0]] = True
+                        card_perm_expos[card_temp_index[1]] = True
+                    elif not (card_temp[0] == card_temp[1]): 
+                        card_exposed[card_temp_index[0]] = False
+                        card_exposed[card_temp_index[1]] = False
+                    card_exposed[card_index] = True
+                    print card_index, "card index"
+                    card_temp[0] =(card_list[card_index])
+                    card_temp_index[0] = card_index
+                    print card_temp[0]
+                    print "card_temp [0]", card_temp [0]
+                    state = 1 
+    print state, "state"
+    print turn, "turn"
+    print " "
+    
+   
+                        
+# cards are logically 50x100 pixels in size    
+def draw(canvas):
+    global card_list
+    for card_index in range(len(card_list)):
+        card_pos = (50 * card_index)+25
+        #print card_index
+        #print card_pos
+        if card_exposed[card_index]:
+            canvas.draw_text(str(card_list[card_index]), (card_pos, 50), 12, "white")
+        elif card_perm_expos[card_index]:
+            canvas.draw_text(str(card_list[card_index]), (card_pos, 50), 12, "white")
+        else:
+            canvas.draw_polygon([[card_pos-25, 0], [card_pos+25, 0], [card_pos+25, 100], [card_pos-25, 100]], 2, 'White', 'Green')
+
+
+
+# create frame and add a button and labels
+frame = simplegui.create_frame("Memory", 800, 100)
+frame.add_button("Reset", new_game)
+label = frame.add_label((str(turn)), 100)
+
+
+# register event handlers
+frame.set_mouseclick_handler(mouseclick)
+frame.set_draw_handler(draw)
+
+# get things rolling
+new_game()
+frame.start()
